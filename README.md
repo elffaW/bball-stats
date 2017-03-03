@@ -1,6 +1,18 @@
 # bball-stats
 
-grabs some stats on bball games, and experiments with ways to rank teams
+grab some stats on bball games, and experiment with ways to rank teams
+
+#Pre-reqs
+- sqlite3
+ - NOTE: database refresh script assumes a linux (bash) environment, but bash shouldn't be required
+- python3
+- bs4 (beautiful soup)
+
+# How to use
+- Setup (or just clear/refresh) database
+ - `./dbRefresh.sh`
+- Run
+ - `python scrape.py`
 
 # Files
 /
