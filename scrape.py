@@ -6,7 +6,6 @@ conn = sqlite3.connect('db/stats.sqlite')
 cursor = conn.cursor()
 
 stats = "http://www.sports-reference.com/cbb/seasons/2017-school-stats.html"
-# stats = "file:///home/ubuntu/workspace/stats_page.html"
 
 page = urllib2.urlopen(stats)
 
@@ -91,10 +90,6 @@ for l in links:
 
 			full_date = year + '-' + month_str + '-' + day
 
-			#TODO strip ranking from opponent_name ["Purdue (15)"" should be "Purdue"]
-			#	should be able to just get the link text from within the name
-			#	ex: elif c['data-stat'] == "opp_name":
-			#			opponent_name = c.find(a).string or similar (check syntax)
 			cursor.execute("SELECT id FROM team WHERE name=?", (opponent_name,))
 			opponent_id = cursor.fetchone()
 			if opponent_id is not None:
