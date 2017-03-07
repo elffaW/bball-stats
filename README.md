@@ -11,16 +11,20 @@ grab some stats on bball games, and experiment with ways to rank teams
 # How to use
 - Setup (or just clear/refresh) database
  - `./dbRefresh.sh`
-- Run
+- Get game and team info and insert into DB
  - `python scrape.py`
+- Run stats type things?
+ - `python stats.py`
 
 # Files
 /
 
 scrape.py
-- code to grab schools and their games and put them into sqlite database
-calculate.py
-- theoretical file with code to calculate ratings for teams
+- grab schools and their games and put them into sqlite database
+
+stats.py
+- code that processes data already in database to calculate rankings and stats type things
+
 stats_page.html
 - contains contents of page with links to all teams
 
@@ -28,8 +32,10 @@ stats_page.html
 
 stats.sql
 - DB schema
+
 stats.sqlite
 - SQLite DB file
+- Contains game info for all teams (includes yet-to-be-played games if they are scheduled - scores are blank)
 
 /test_files/
 - just some files that contained output of various runs...
