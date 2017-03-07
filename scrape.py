@@ -5,8 +5,8 @@ import sqlite3
 conn = sqlite3.connect('db/stats.sqlite')
 cursor = conn.cursor()
 
-# stats = "http://www.sports-reference.com/cbb/seasons/2017-school-stats.html"
-stats = "file:///home/ubuntu/workspace/stats_page.html"
+stats = "http://www.sports-reference.com/cbb/seasons/2017-school-stats.html"
+# stats = "file:///home/ubuntu/workspace/stats_page.html"
 
 page = urllib2.urlopen(stats)
 
@@ -16,22 +16,27 @@ stats_table = soup.find(id="basic_school_stats")
 
 links = stats_table.find_all('a')
 
+num_links = str(len(links))
+i = 1;
 for l in links:
 	rating = 0
 	school_name = l.string
+	school_id = None
 	
 	#insert teams into DB (IntegrityError is thrown when UNIQUE constraint is violated - we'll just swallow it)
 	try:
 		cursor.execute("INSERT INTO team (name,rating) VALUES (?,?)", (school_name,rating))
 	except sqlite3.IntegrityError as ie:
-		pass
-
-	school_id = cursor.lastrowid
-	
-	if school_id is None:
 		cursor.execute("SELECT id FROM team WHERE name=?", (school_name,))
 		school_id = cursor.fetchone()[0]
+		pass
+
+	if school_id is None:
+		school_id = cursor.lastrowid
 		
+	print 'Processing link ' + str(i) + ' of ' + str(num_links) + ' [' + str(school_id) + ', ' + str(school_name) + ']'
+	i += 1
+
 	#link in the table is to stats page, but schedule page just adds "-schedule" to the URL before .html
 	schedule_link = 'http://www.sports-reference.com' + l['href'][:-5] + '-schedule.html'
 	
@@ -41,6 +46,8 @@ for l in links:
 	sched_table = soup_sched.find(id="schedule")
 
 	rows = sched_table.find_all('tr')
+
+	print '\tProcessing ' + str(len(rows)) + ' games'
 
 	for r in rows:
 		cols = r.find_all('td')
@@ -80,6 +87,10 @@ for l in links:
 
 			full_date = year + '-' + month_str + '-' + day
 
+			#TODO strip ranking from opponent_name ["Purdue (15)"" should be "Purdue"]
+			#	should be able to just get the link text from within the name
+			#	ex: elif c['data-stat'] == "opp_name":
+			#			opponent_name = c.find(a).string or similar (check syntax)
 			cursor.execute("SELECT id FROM team WHERE name=?", (opponent_name,))
 			opponent_id = cursor.fetchone()
 			if opponent_id is not None:
@@ -91,11 +102,10 @@ for l in links:
 				
 			if date_time is not None and school_id is not None and opponent_id is not None:
 				try:
+					print '\tInserting new game: ' + str(game_date) + ' | ' + str(school_id) + ' , ' + school_name + ' | ' + str(opponent_id) + ' , ' + opponent_name
 					cursor.execute("INSERT INTO game (game_date,school_id,opponent_id,pts_scored,pts_allowed) VALUES (?,?,?,?,?)",(full_date,school_id,opponent_id,pts_scored,pts_allowed))
 				except sqlite3.InterfaceError as e:
 					print e.args
-
-		conn.commit()
 
 conn.commit()
 
