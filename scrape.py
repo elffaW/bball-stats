@@ -65,7 +65,11 @@ for l in links:
 			elif c['data-stat'] == "time_game":
 				game_time = c.string
 			elif c['data-stat'] == "opp_name":
-				opponent_name = c.string
+				temp = c.a
+				if c.a is not None:
+					opponent_name = temp.string
+				else :
+					opponent_name = c.string
 			elif c['data-stat'] == "pts":
 				pts_scored = c.string
 			elif c['data-stat'] == "opp_pts":
