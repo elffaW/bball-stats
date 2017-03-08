@@ -107,5 +107,4 @@ for l in links:
 					print e.args
 
 conn.commit()
-
-# print links
+cursor.close()
