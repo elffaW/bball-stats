@@ -16,11 +16,11 @@ def calculateRPI( team_name ):
 	print 'Calculating RPI for ' + team_name
 	school_id = getTeamId(team_name)
 	#get games for team
-	cursor.execute("SELECT * FROM game WHERE school_id=?", (school_id,))
+	cursor.execute("SELECT * FROM game WHERE school_id=? AND pts_scored > 0", (school_id,))
 	games = cursor.fetchall()
 
 	#WP = wins / num_games
-	wp = calculateWP(school_id)
+	wp = calculateWP(school_id, None)
 
 	#OWP = sum(all OWP) / num_games
 	owp = calculateOWP(school_id)
@@ -36,56 +36,95 @@ def calculateRPI( team_name ):
 	for game in games:
 		opponents.append(game['opponent_id'])
 
-	owp = cumulative_owp / num_games
-	
-	
 
 	num_opps = len(opponents)
 	cumulative_oowp = 0
 
 	for opp in opponents:
-		
+		cumulative_oowp += calculateOWP(opp)
 
-	print 'wp = ' + str(wp)
-	print 'owp = ' + str(owp)
-	return 0.25 * wp + 0.5 * owp
+	oowp = cumulative_oowp / num_opps
 
-def calculateWP( team_id ):
+	rpi = (0.25 * wp) + (0.5 * owp) + (0.25 * oowp)
+
+	print 'wp =\t' + str(wp)
+	print 'owp =\t' + str(owp)
+	print 'oowp =\t' + str(oowp)
+	
+	return rpi
+
+
+# takes team_id to calculate winning percentage of, and optionally takes a second id representing a school to remove from WP calc (for OWP)
+def calculateWP( team_id, opp_id ):
 	#get games for team
-	cursor.execute("SELECT * FROM game WHERE school_id=?", (team_id,))
+	if opp_id is not None:
+		cursor.execute("SELECT * FROM game WHERE school_id=? AND pts_scored > 0 AND opponent_id != ?", (team_id,opp_id))
+	else:
+		cursor.execute("SELECT * FROM game WHERE school_id=? AND pts_scored > 0", (team_id,))
 	games = cursor.fetchall()
 
 	num_games = len(games)
-	num_wins = 0
+	num_losses = 0.0
+	num_wins = 0.0
+
+	if(num_games < 1):
+		return 0
 
 	for game in games:
 		if game['pts_scored'] > game['pts_allowed']:
-			num_wins += 1
+			if opp_id is None:
+				if game['game_location'] == 'home':
+					num_wins += 0.6
+				elif game['game_location'] == 'away':
+					num_wins += 1.4
+				else: #'neutral'
+					num_wins += 1.0
+			else: #WP only differentiates home/away/neutral for WP, not for OWP/OOWP
+				num_wins += 1.0
+		elif game['pts_scored'] < game['pts_allowed']:
+			if opp_id is None:
+				if game['game_location'] == 'home':
+					num_losses += 1.4
+				elif game['game_location'] == 'away':
+					num_losses += 0.6
+				else: #'neutral'
+					num_losses += 1.0
+			else: #WP only differentiates home/away/neutral for WP, not for OWP/OOWP
+				num_losses += 1.0
+	
+	return num_wins / (num_wins + num_losses)
 
-	return num_wins / num_games
 
 def calculateOWP( team_id ):
 	#get games for team
-	cursor.execute("SELECT * FROM game WHERE school_id=?", (team_id,))
+	cursor.execute("SELECT * FROM game WHERE school_id=? AND pts_scored > 0", (team_id,))
 	games = cursor.fetchall()
 
 	#OWP = sum(all OWP) / num_games
 	num_games = len(games)
-	cumulative_owp = 0
-	owp = 0
+	cumulative_owp = 0.0
+	owp = 0.0
+
+	if num_games < 1:
+		return 0
 
 	for game in games:
-		cumulative_owp += calculateWP(game['opponent_id'])
+		if game['pts_scored'] is None:
+			num_games -= 1
+		else:
+			cumulative_owp += calculateWP(game['opponent_id'], team_id)
 
 	owp = cumulative_owp / num_games
 
 	return owp
 
-wp = calculateWP(getTeamId("Louisville"))
-rpi = calculateRPI("Louisville")
+# wp = calculateWP(getTeamId("Louisville"))
+# rpi = calculateRPI("Kansas")
+print calculateRPI("Villanova")
+print calculateRPI("Kansas")
+print calculateRPI("Louisville")
 
-print 'WP:\t' + str(wp)
-print 'RPI:\t' + str(rpi)
+# print 'RPI:\t' + str(rpi)
 
 conn.commit()
 cursor.close()

@@ -57,6 +57,7 @@ for l in links:
 		opponent_name = ''
 		pts_scored = -1
 		pts_allowed = -1
+		temp_loc = 'TEST'
 
 		for c in cols:
 			if c['data-stat'] == "date_game":
@@ -73,6 +74,8 @@ for l in links:
 				pts_scored = c.string
 			elif c['data-stat'] == "opp_pts":
 				pts_allowed = c.string
+			elif c['data-stat'] == 'game_location':
+				temp_loc = c.string
 
 		if game_date is not '' and school_id is not None and opponent_name is not '':
 			game_time = game_time[:-4] + ' EST'
@@ -89,6 +92,12 @@ for l in links:
 			year = str(split_time[3])
 
 			full_date = year + '-' + month_str + '-' + day
+			
+			game_location = 'home'
+			if temp_loc == '@':
+				game_location = 'away'
+			elif temp_loc == 'N':
+				game_location = 'neutral'
 
 			cursor.execute("SELECT id FROM team WHERE name=?", (opponent_name,))
 			opponent_id = cursor.fetchone()
@@ -101,8 +110,8 @@ for l in links:
 				
 			if date_time is not None and school_id is not None and opponent_id is not None:
 				try:
-					print '\tInserting new game: ' + str(game_date) + ' | ' + str(school_id) + ' , ' + school_name + ' | ' + str(opponent_id) + ' , ' + opponent_name
-					cursor.execute("INSERT INTO game (game_date,school_id,opponent_id,pts_scored,pts_allowed) VALUES (?,?,?,?,?)",(full_date,school_id,opponent_id,pts_scored,pts_allowed))
+					print '\tInserting new game: ' + str(game_date) + ' | ' + str(school_id) + ' , ' + school_name + ' | ' + str(opponent_id) + ' , ' + opponent_name + ' | ' + game_location
+					cursor.execute("INSERT INTO game (game_date,school_id,opponent_id,game_location,pts_scored,pts_allowed) VALUES (?,?,?,?,?,?)",(full_date,school_id,opponent_id,game_location,pts_scored,pts_allowed))
 				except sqlite3.InterfaceError as e:
 					print e.args
 
