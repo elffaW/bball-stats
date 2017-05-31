@@ -39,3 +39,5 @@ stats.sqlite
 
 /test_files/
 - just some files that contained output of various runs...
+
+Check out http://kenpom.com/
